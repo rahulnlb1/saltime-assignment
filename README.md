@@ -359,41 +359,7 @@ await setTenantContext(authenticatedTenantId);
 ├── migrations/              # Database schema migrations
 ├── seeds/                   # Sample data for development
 ├── scripts/                 # Utility scripts (JWT generation, testing)
-├── docs/
-│   ├── ARCHITECTURE.md      # System architecture documentation
-│   ├── INSIGHTS_AND_RECOMMENDATIONS.md  # AI strategy document
-│   └── DELIVERY_PLAN.md     # 3-month implementation plan
-└── architecture-diagram.mmd # Mermaid architecture diagram
 ```
-
-## 📚 Documentation
-
-### Core Documents
-1. **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete system architecture with design decisions
-2. **[INSIGHTS_AND_RECOMMENDATIONS.md](./INSIGHTS_AND_RECOMMENDATIONS.md)** - AI strategy and responsible AI practices
-3. **[DELIVERY_PLAN.md](./DELIVERY_PLAN.md)** - 3-month delivery plan for 11-person team
-
-### Architecture Diagram
-- **[architecture-diagram.mmd](./architecture-diagram.mmd)** - Mermaid diagram showing system components
-- View online at: [Mermaid Live Editor](https://mermaid.live/)
-
-## 🚀 Production Deployment
-
-### Infrastructure Requirements
-```yaml
-# Kubernetes resources (per region)
-Backend Services: 3 replicas × 2 vCPU, 4GB RAM
-Database: PostgreSQL 14 (managed service recommended)
-Cache: Redis Cluster (6 nodes, 2GB each)
-Message Queue: Kafka (3 brokers, 8GB each)
-Load Balancer: Application Load Balancer with SSL termination
-```
-
-### Scaling Thresholds
-- **Horizontal Scaling**: CPU >70% or Memory >80%
-- **Database Read Replicas**: Query latency >100ms
-- **Cache Cluster**: Memory usage >75%
-- **Message Queue**: Lag >10,000 messages
 
 ### Monitoring & Alerting
 ```yaml
@@ -514,27 +480,3 @@ tail -f logs/combined.log | grep "database"
 # Check Redis cache hit ratio
 redis-cli info stats | grep keyspace_hits
 ```
-
-## 📞 Contact
-
-**Senior Architect Assignment** - Saltmine Interview  
-**Candidate**: Rahul Jain  
-**Date**: December 2024  
-
-**Assignment Components:**
-- ✅ **Architecture Design** ([ARCHITECTURE.md](./ARCHITECTURE.md))
-- ✅ **AI Strategy** ([INSIGHTS_AND_RECOMMENDATIONS.md](./INSIGHTS_AND_RECOMMENDATIONS.md))
-- ✅ **Working Prototype** (This codebase)
-- ✅ **Delivery Plan** ([DELIVERY_PLAN.md](./DELIVERY_PLAN.md))
-
----
-
-**Ready for production deployment and enterprise customer onboarding! 🚀**
-
-This solution demonstrates senior architect-level thinking with:
-- **Enterprise-grade architecture** with proper multi-tenancy and security
-- **Responsible AI integration** with bias mitigation and explainability
-- **Production-ready code** with comprehensive testing and monitoring
-- **Realistic delivery planning** balancing technical debt and business value
-
-*Built with ❤️ for Saltmine's enterprise customers and their workplace optimization journey.*
