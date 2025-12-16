@@ -1,0 +1,149 @@
+graph TB
+    %% External Systems
+    subgraph "External Systems"
+        Sensors[IoT Sensors<br/>5K per office<br/>200 offices]
+        HR[HR Systems<br/>Workday]
+        Collab[Collaboration<br/>Teams/Slack]
+    end
+
+    %% CDN and Load Balancing
+    CDN[CDN/CloudFlare]
+    LB[Load Balancer]
+
+    %% API Gateway
+    subgraph "API Gateway Layer"
+        Gateway[Kong API Gateway<br/>Authentication<br/>Rate Limiting<br/>Audit Logging]
+    end
+
+    %% Core Services
+    subgraph "Microservices Layer"
+        TenantSvc[Tenant Management<br/>Service]
+        OccupancySvc[Occupancy Data<br/>Service]
+        AnalyticsSvc[Analytics Engine<br/>Apache Spark]
+        IntegrationSvc[Integration<br/>Service]
+        AISvc[AI/ML Service<br/>LangChain + LLMs]
+        NotificationSvc[Notification<br/>Service]
+    end
+
+    %% Data Layer
+    subgraph "Data Storage Layer"
+        subgraph "Time-Series DB"
+            InfluxDB[(InfluxDB<br/>Occupancy Events)]
+        end
+        subgraph "Relational DB"
+            PostgreSQL[(PostgreSQL<br/>Metadata & Config)]
+        end
+        subgraph "Caching"
+            Redis[(Redis Cluster<br/>Session & Cache)]
+        end
+        subgraph "Object Storage"
+            S3[(Object Storage<br/>Reports & Assets)]
+        end
+    end
+
+    %% Message Queue
+    subgraph "Event Streaming"
+        Kafka[Apache Kafka<br/>Event Bus]
+        SQS[Message Queues<br/>Internal Communication]
+    end
+
+    %% AI/ML Infrastructure
+    subgraph "AI/ML Platform"
+        MLPipeline[ML Pipeline<br/>MLflow]
+        ModelServing[Model Serving<br/>GPU Clusters]
+        FeatureStore[Feature Store]
+    end
+
+    %% Monitoring
+    subgraph "Observability"
+        Prometheus[Prometheus<br/>Metrics]
+        Grafana[Grafana<br/>Dashboards]
+        ELK[ELK Stack<br/>Logging]
+        Jaeger[Jaeger<br/>Tracing]
+    end
+
+    %% Security
+    subgraph "Security & Secrets"
+        Vault[HashiCorp Vault<br/>Secrets Management]
+        KMS[AWS KMS<br/>Key Management]
+    end
+
+    %% Multi-Region
+    subgraph "Multi-Region Deployment"
+        USEast[US-East Region]
+        EUWest[EU-West Region]
+        APACSouth[APAC-Southeast Region]
+    end
+
+    %% Client Applications
+    subgraph "Client Layer"
+        WebApp[Web Application<br/>React/TypeScript]
+        MobileApp[Mobile Apps<br/>React Native]
+        API[Public APIs<br/>REST/GraphQL]
+    end
+
+    %% Connections
+    Sensors --> Kafka
+    HR --> IntegrationSvc
+    Collab --> IntegrationSvc
+
+    CDN --> WebApp
+    CDN --> MobileApp
+    LB --> Gateway
+
+    Gateway --> TenantSvc
+    Gateway --> OccupancySvc
+    Gateway --> AnalyticsSvc
+    Gateway --> AISvc
+    Gateway --> IntegrationSvc
+    Gateway --> NotificationSvc
+
+    Kafka --> OccupancySvc
+    Kafka --> AnalyticsSvc
+
+    OccupancySvc --> InfluxDB
+    OccupancySvc --> PostgreSQL
+    TenantSvc --> PostgreSQL
+    AnalyticsSvc --> InfluxDB
+    AnalyticsSvc --> PostgreSQL
+    AnalyticsSvc --> FeatureStore
+
+    AISvc --> MLPipeline
+    AISvc --> ModelServing
+    AISvc --> FeatureStore
+
+    TenantSvc --> Redis
+    OccupancySvc --> Redis
+    AnalyticsSvc --> S3
+
+    IntegrationSvc --> SQS
+    NotificationSvc --> SQS
+
+    TenantSvc --> Vault
+    IntegrationSvc --> Vault
+    AISvc --> KMS
+
+    Gateway --> Prometheus
+    OccupancySvc --> Prometheus
+    AnalyticsSvc --> Prometheus
+    AISvc --> Prometheus
+
+    Prometheus --> Grafana
+    
+    %% Multi-tenant data flow
+    InfluxDB --> USEast
+    InfluxDB --> EUWest
+    InfluxDB --> APACSouth
+
+    %% Styling
+    classDef external fill:#e1f5fe
+    classDef service fill:#f3e5f5
+    classDef data fill:#e8f5e8
+    classDef security fill:#fff3e0
+    classDef monitor fill:#fce4ec
+
+    class Sensors,HR,Collab external
+    class TenantSvc,OccupancySvc,AnalyticsSvc,IntegrationSvc,AISvc,NotificationSvc service
+    class InfluxDB,PostgreSQL,Redis,S3 data
+    class Vault,KMS security
+    class Prometheus,Grafana,ELK,Jaeger monitor

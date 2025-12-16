@@ -1,0 +1,156 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database - Primary data store for tenant management and metadata
+  postgres:
+    image: postgres:14-alpine
+    container_name: workplace-postgres
+    restart: unless-stopped
+    environment:
+      # Database credentials - change these for production
+      POSTGRES_USER: workplace_user
+      POSTGRES_PASSWORD: workplace_password
+      POSTGRES_DB: workplace_optimization
+      # Performance tuning parameters
+      POSTGRES_MAX_CONNECTIONS: 200
+      POSTGRES_SHARED_BUFFERS: 256MB
+    ports:
+      - "5433:5432"
+    volumes:
+      # Persist database data across container restarts
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: Mount initialization scripts
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - workplace-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workplace_user -d workplace_optimization"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Redis Cache - High-performance caching layer for utilization calculations
+  redis:
+    image: redis:7-alpine
+    container_name: workplace-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    ports:
+      - "6379:6379"
+    volumes:
+      # Persist Redis data for durability
+      - redis_data:/data
+    networks:
+      - workplace-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  # Optional: PgAdmin for database management (development only)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: workplace-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@workplace.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - workplace-network
+    depends_on:
+      - postgres
+    profiles:
+      # Only start with: docker-compose --profile dev up
+      - dev
+
+  # Optional: Redis Commander for Redis management (development only)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: workplace-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - workplace-network
+    depends_on:
+      - redis
+    profiles:
+      # Only start with: docker-compose --profile dev up
+      - dev
+
+  # Application API Server (optional - can be run locally during development)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: workplace-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Database connection
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: workplace_user
+      DB_PASSWORD: workplace_password
+      DB_NAME: workplace_optimization
+      # Redis connection
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # JWT configuration
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      JWT_EXPIRY: 24h
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount logs for debugging
+      - ./logs:/app/logs
+    networks:
+      - workplace-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      # Only start with: docker-compose --profile full up
+      - full
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# Dedicated network for service communication
+networks:
+  workplace-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
